@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="bn" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Rabbit Welfare Society of Bangladesh - Health Tracker</title>
+    <meta name="description" content="খরগোশের স্বাস্থ্য ও যত্ন ট্র্যাকিং অ্যাপ - Comprehensive rabbit health, weight, GI stasis monitor, vaccination records, diet guides, and AI veterinary assistant for Bangladesh rabbit owners." />
+    
+    <!-- PWA & Theme Color -->
+    <meta name="theme-color" content="#064e3b" />
+    <meta name="background-color" content="#064e3b" />
+    <meta name="application-name" content="Rabbit Care BD" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Apple iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Rabbit Care BD" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+
+    <!-- Microsoft Windows Tiles -->
+    <meta name="msapplication-TileColor" content="#064e3b" />
+    <meta name="msapplication-TileImage" content="/icons/icon-192x192.png" />
+
+    <!-- Manifest Links -->
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="alternate" type="application/manifest+json" href="/manifest.webmanifest" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/favicon-96x96.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192x192.png" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512x512.png" />
+
+    <!-- Open Graph Tags -->
+    <meta property="og:title" content="Rabbit Welfare Society of Bangladesh - Health Tracker" />
+    <meta property="og:description" content="খরগোশের স্বাস্থ্য ও যত্ন ট্র্যাকিং অ্যাপ - Comprehensive rabbit health, weight, GI stasis monitor, vaccination records, diet guides, and AI veterinary assistant for Bangladesh rabbit owners." />
+    <meta property="og:image" content="/screenshots/screenshot-wide.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="bn_BD" />
+  </head>
+  <body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-200 min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Service Worker Registration for PWABuilder
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js', { scope: '/' })
+            .then((registration) => {
+              console.log('PWA Service Worker registered with scope:', registration.scope);
+            })
+            .catch((err) => {
+              console.warn('PWA Service Worker registration warning:', err);
+            });
+        });
+      }
+    </script>
+  </body>
+</html>

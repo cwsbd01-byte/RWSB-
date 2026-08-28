@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json.schemastore.org/web-manifest-combined.json",
+  "name": "Rabbit Welfare Society of Bangladesh - Health Tracker",
+  "short_name": "Rabbit Care BD",
+  "description": "Comprehensive rabbit health, weight, GI stasis monitor, vaccination records, diet guides, and AI veterinary assistant for Bangladesh rabbit owners - খরগোশের স্বাস্থ্য ও যত্ন ট্র্যাকিং অ্যাপ",
+  "id": "/?source=pwa",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#064e3b",
+  "theme_color": "#064e3b",
+  "lang": "bn",
+  "dir": "ltr",
+  "categories": ["medical", "pets", "health", "utilities", "lifestyle"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/favicon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/screenshot-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Rabbit Health Tracker Dashboard Desktop View"
+    },
+    {
+      "src": "/screenshots/screenshot-narrow.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Rabbit Health Tracker Mobile App View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI Symptom Checker",
+      "short_name": "AI Triage",
+      "description": "Check rabbit symptoms and emergency triage with AI",
+      "url": "/?tab=ai-checker",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Emergency GI Stasis Guide",
+      "short_name": "Emergency",
+      "description": "First aid instructions for rabbit bloat and stasis",
+      "url": "/?tab=emergency",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Vet Directory Bangladesh",
+      "short_name": "Vet Clinics",
+      "description": "Find rabbit veterinary hospitals and emergency contacts in Bangladesh",
+      "url": "/?tab=vets",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Daily Health Log",
+      "short_name": "Health Log",
+      "description": "Record daily appetite, poop score and hydration",
+      "url": "/?tab=overview",
+      "icons": [
+        {
+          "src": "/icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}
