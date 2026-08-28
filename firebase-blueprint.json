@@ -1,0 +1,119 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User account information and preferences",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "phone": { "type": "string" },
+        "city": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "Rabbit": {
+      "title": "Rabbit Profile",
+      "description": "Information about a user's rabbit",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "breed": { "type": "string" },
+        "gender": { "type": "string" },
+        "ageYears": { "type": "number" },
+        "ageMonths": { "type": "number" },
+        "weightKg": { "type": "number" },
+        "color": { "type": "string" },
+        "microchipNo": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "notes": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "ownerPhone": { "type": "string" },
+        "ownerCity": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "breed", "gender", "weightKg", "createdAt"]
+    },
+    "DailyHealthLog": {
+      "title": "Daily Health Log",
+      "description": "Daily rabbit health check and GI stasis monitoring log",
+      "type": "object",
+      "properties": {
+        "rabbitId": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "poopQuality": { "type": "string" },
+        "poopQuantityRating": { "type": "number" },
+        "hayIntakePct": { "type": "number" },
+        "pelletIntake": { "type": "string" },
+        "waterIntake": { "type": "string" },
+        "greensGiven": { "type": "array", "items": { "type": "string" } },
+        "activityLevel": { "type": "string" },
+        "earMiteCheck": { "type": "string" },
+        "eyeNoseCheck": { "type": "string" },
+        "teethGrinding": { "type": "boolean" },
+        "temperatureCelsius": { "type": "number" },
+        "weightGrams": { "type": "number" },
+        "notes": { "type": "string" },
+        "stasisRiskLevel": { "type": "string" }
+      },
+      "required": ["rabbitId", "date", "poopQuality", "stasisRiskLevel"]
+    },
+    "WeightRecord": {
+      "title": "Weight Record",
+      "description": "Periodic weight tracking log",
+      "type": "object",
+      "properties": {
+        "rabbitId": { "type": "string" },
+        "date": { "type": "string" },
+        "weightGrams": { "type": "number" },
+        "weightKg": { "type": "number" },
+        "changeGrams": { "type": "number" },
+        "notes": { "type": "string" }
+      },
+      "required": ["rabbitId", "date", "weightGrams", "weightKg"]
+    },
+    "MedicalRecord": {
+      "title": "Medical Record",
+      "description": "Vaccinations, vet visits, and medications",
+      "type": "object",
+      "properties": {
+        "rabbitId": { "type": "string" },
+        "date": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "clinicName": { "type": "string" },
+        "vetDoctor": { "type": "string" },
+        "costBDT": { "type": "number" },
+        "nextDueDate": { "type": "string" },
+        "notes": { "type": "string" },
+        "prescribedMeds": { "type": "string" }
+      },
+      "required": ["rabbitId", "date", "type", "title"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/profile": {
+      "schema": "UserProfile",
+      "description": "Personal profile and settings for the user"
+    },
+    "/users/{userId}/rabbits/{rabbitId}": {
+      "schema": "Rabbit",
+      "description": "Isolated rabbit profiles owned strictly by this user"
+    },
+    "/users/{userId}/healthLogs/{logId}": {
+      "schema": "DailyHealthLog",
+      "description": "Daily health logs belonging to the user's rabbits"
+    },
+    "/users/{userId}/weightRecords/{weightId}": {
+      "schema": "WeightRecord",
+      "description": "Weight records belonging to the user's rabbits"
+    },
+    "/users/{userId}/medicalRecords/{medicalId}": {
+      "schema": "MedicalRecord",
+      "description": "Medical histories and vaccinations belonging to the user's rabbits"
+    }
+  }
+}

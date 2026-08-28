@@ -13,19 +13,25 @@ import {
 } from './types';
 import { translations } from './data/translations';
 import { 
-  getRabbits, 
-  saveRabbits, 
-  getActiveRabbitId, 
-  setActiveRabbitId as setStorageActiveRabbitId,
-  getHealthLogs, 
-  saveHealthLogs, 
-  getWeightRecords, 
-  saveWeightRecords, 
-  getMedicalRecords, 
-  saveMedicalRecords,
   getPreferredLanguage,
   setPreferredLanguage
 } from './utils/storage';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthScreen } from './components/AuthScreen';
+import { 
+  subscribeToUserRabbits, 
+  saveFirestoreRabbit, 
+  deleteFirestoreRabbit,
+  subscribeToHealthLogs,
+  saveFirestoreHealthLog,
+  deleteFirestoreHealthLog,
+  subscribeToWeightRecords,
+  saveFirestoreWeightRecord,
+  deleteFirestoreWeightRecord,
+  subscribeToMedicalRecords,
+  saveFirestoreMedicalRecord,
+  deleteFirestoreMedicalRecord
+} from './utils/firestoreService';
 import { Header } from './components/Header';
 import { HealthOverview } from './components/HealthOverview';
 import { WeightTracker } from './components/WeightTracker';
@@ -38,9 +44,11 @@ import { DailyLogModal } from './components/DailyLogModal';
 import { RabbitSelectorModal } from './components/RabbitSelectorModal';
 import { VetReportModal } from './components/VetReportModal';
 import { RABBIT_WELFARE_SOCIETY_INFO } from './data/bangladeshVetsAndDiet';
-import { Heart, PhoneCall, ShieldAlert, Sparkles } from 'lucide-react';
+import { Heart, PhoneCall, ShieldAlert, Sparkles, Lock, Plus } from 'lucide-react';
 
-export default function App() {
+function AppContent() {
+  const { user, userProfile, loading } = useAuth();
+
   const [language, setLanguage] = useState<Language>('bn');
   const [activeTab, setActiveTab] = useState<string>('overview');
 
@@ -57,33 +65,58 @@ export default function App() {
   const [editingRabbit, setEditingRabbit] = useState<Rabbit | null>(null);
   const [isWritingFocus, setIsWritingFocus] = useState(false);
 
-  // Initial Data Load
+  // Initial Language and URL Deep Link Load
   useEffect(() => {
     const savedLang = getPreferredLanguage();
     setLanguage(savedLang);
 
-    // Read URL query params for PWA shortcut deep-linking
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get('tab');
     if (tabParam && ['overview', 'emergency', 'ai-checker', 'diet', 'records', 'weight', 'vets'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
+  }, []);
 
-    const loadedRabbits = getRabbits();
-    setRabbits(loadedRabbits);
-
-    const currentId = getActiveRabbitId();
-    if (currentId && loadedRabbits.some((r) => r.id === currentId)) {
-      setActiveRabbitId(currentId);
-    } else if (loadedRabbits.length > 0) {
-      setActiveRabbitId(loadedRabbits[0].id);
-      setStorageActiveRabbitId(loadedRabbits[0].id);
+  // Strict Realtime Firestore sync scoped to user.uid
+  useEffect(() => {
+    if (!user) {
+      setRabbits([]);
+      setActiveRabbitId(null);
+      setLogs([]);
+      setWeightRecords([]);
+      setMedicalRecords([]);
+      return;
     }
 
-    setLogs(getHealthLogs());
-    setWeightRecords(getWeightRecords());
-    setMedicalRecords(getMedicalRecords());
-  }, []);
+    const unsubRabbits = subscribeToUserRabbits(user.uid, (userRabbits) => {
+      setRabbits(userRabbits);
+      setActiveRabbitId((prevId) => {
+        if (prevId && userRabbits.some((r) => r.id === prevId)) {
+          return prevId;
+        }
+        return userRabbits.length > 0 ? userRabbits[0].id : null;
+      });
+    });
+
+    const unsubLogs = subscribeToHealthLogs(user.uid, (userLogs) => {
+      setLogs(userLogs);
+    });
+
+    const unsubWeights = subscribeToWeightRecords(user.uid, (userWeights) => {
+      setWeightRecords(userWeights);
+    });
+
+    const unsubMedical = subscribeToMedicalRecords(user.uid, (userMeds) => {
+      setMedicalRecords(userMeds);
+    });
+
+    return () => {
+      unsubRabbits();
+      unsubLogs();
+      unsubWeights();
+      unsubMedical();
+    };
+  }, [user]);
 
   // Universal Floating Mode & Writing Focus across all inputs and textareas
   useEffect(() => {
@@ -101,7 +134,6 @@ export default function App() {
 
       if (isTextInput) {
         setIsWritingFocus(true);
-        // Scroll the input into unobstructed center view
         setTimeout(() => {
           target.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 120);
@@ -142,78 +174,84 @@ export default function App() {
 
   const handleSelectRabbit = (id: string) => {
     setActiveRabbitId(id);
-    setStorageActiveRabbitId(id);
   };
 
-  const handleSaveRabbit = (rabbit: Rabbit) => {
-    let updated: Rabbit[];
-    const exists = rabbits.some((r) => r.id === rabbit.id);
-    if (exists) {
-      updated = rabbits.map((r) => (r.id === rabbit.id ? rabbit : r));
-    } else {
-      updated = [...rabbits, rabbit];
-    }
-    setRabbits(updated);
-    saveRabbits(updated);
+  const handleSaveRabbit = async (rabbit: Rabbit) => {
+    if (!user) return;
+    await saveFirestoreRabbit(user.uid, rabbit);
     setActiveRabbitId(rabbit.id);
-    setStorageActiveRabbitId(rabbit.id);
     setEditingRabbit(null);
   };
 
-  const handleDeleteRabbit = (id: string) => {
-    const updated = rabbits.filter((r) => r.id !== id);
-    setRabbits(updated);
-    saveRabbits(updated);
+  const handleDeleteRabbit = async (id: string) => {
+    if (!user) return;
+    await deleteFirestoreRabbit(user.uid, id);
     if (activeRabbitId === id) {
-      const nextId = updated.length > 0 ? updated[0].id : null;
-      setActiveRabbitId(nextId);
-      if (nextId) setStorageActiveRabbitId(nextId);
+      const remaining = rabbits.filter((r) => r.id !== id);
+      setActiveRabbitId(remaining.length > 0 ? remaining[0].id : null);
     }
   };
 
-  const handleSaveLog = (newLog: DailyHealthLog) => {
-    const updated = [newLog, ...logs.filter((l) => l.id !== newLog.id)];
-    setLogs(updated);
-    saveHealthLogs(updated);
+  const handleSaveLog = async (newLog: DailyHealthLog) => {
+    if (!user) return;
+    await saveFirestoreHealthLog(user.uid, newLog);
   };
 
-  const handleDeleteLog = (id: string) => {
-    const updated = logs.filter((l) => l.id !== id);
-    setLogs(updated);
-    saveHealthLogs(updated);
+  const handleDeleteLog = async (id: string) => {
+    if (!user) return;
+    await deleteFirestoreHealthLog(user.uid, id);
   };
 
-  const handleSaveWeight = (rec: WeightRecord) => {
-    const updated = [...weightRecords.filter((w) => w.id !== rec.id), rec].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-    setWeightRecords(updated);
-    saveWeightRecords(updated);
+  const handleSaveWeight = async (rec: WeightRecord) => {
+    if (!user) return;
+    await saveFirestoreWeightRecord(user.uid, rec);
 
-    // Also update active rabbit's weightKg
+    // Also update active rabbit's weightKg in firestore
     if (activeRabbit) {
       const updatedRabbit = { ...activeRabbit, weightKg: rec.weightKg };
-      handleSaveRabbit(updatedRabbit);
+      await saveFirestoreRabbit(user.uid, updatedRabbit);
     }
   };
 
-  const handleDeleteWeight = (id: string) => {
-    const updated = weightRecords.filter((w) => w.id !== id);
-    setWeightRecords(updated);
-    saveWeightRecords(updated);
+  const handleDeleteWeight = async (id: string) => {
+    if (!user) return;
+    await deleteFirestoreWeightRecord(user.uid, id);
   };
 
-  const handleSaveMedical = (rec: MedicalRecord) => {
-    const updated = [rec, ...medicalRecords.filter((m) => m.id !== rec.id)];
-    setMedicalRecords(updated);
-    saveMedicalRecords(updated);
+  const handleSaveMedical = async (rec: MedicalRecord) => {
+    if (!user) return;
+    await saveFirestoreMedicalRecord(user.uid, rec);
   };
 
-  const handleDeleteMedical = (id: string) => {
-    const updated = medicalRecords.filter((m) => m.id !== id);
-    setMedicalRecords(updated);
-    saveMedicalRecords(updated);
+  const handleDeleteMedical = async (id: string) => {
+    if (!user) return;
+    await deleteFirestoreMedicalRecord(user.uid, id);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-emerald-950 flex flex-col items-center justify-center text-white p-6">
+        <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-500 flex items-center justify-center text-3xl shadow-xl shadow-emerald-500/20 mb-4 animate-bounce">
+          🐰
+        </div>
+        <div className="w-6 h-6 border-2 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin mb-3"></div>
+        <p className="text-sm font-semibold text-emerald-200">
+          {language === 'bn' ? 'নিরাপদ ক্লাউড সংযোগ লোড হচ্ছে...' : 'Connecting to secure private cloud...'}
+        </p>
+      </div>
+    );
+  }
+
+  // Not logged in -> Show Authentication Screen
+  if (!user) {
+    return (
+      <AuthScreen
+        language={language}
+        onLanguageToggle={() => handleLanguageChange(language === 'bn' ? 'en' : 'bn')}
+      />
+    );
+  }
 
   const activeRabbit = rabbits.find((r) => r.id === activeRabbitId) || null;
   const filteredLogs = logs.filter((l) => l.rabbitId === activeRabbitId);
@@ -264,6 +302,38 @@ export default function App() {
 
       {/* Main View Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Welcome Empty State if user has 0 rabbits added yet */}
+        {rabbits.length === 0 && activeTab === 'overview' && (
+          <div className="mb-8 p-6 sm:p-8 bg-gradient-to-br from-emerald-900 via-emerald-800 to-teal-900 text-white rounded-3xl shadow-xl border border-emerald-700 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2 text-center md:text-left">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-400/30">
+                <Lock className="w-3.5 h-3.5" />
+                <span>{language === 'bn' ? 'ব্যক্তিগত খরগোশ ডাটাবেজ' : 'Private Rabbit Database'}</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black">
+                {language === 'bn' 
+                  ? `স্বাগতম, ${userProfile?.displayName || 'খরগোশ অভিভাবক'}!`
+                  : `Welcome, ${userProfile?.displayName || 'Rabbit Parent'}!`}
+              </h2>
+              <p className="text-sm text-emerald-100/80 max-w-xl">
+                {language === 'bn'
+                  ? 'আপনার একাউন্ট সম্পূর্ণ সুরক্ষিত। ট্র্যাকিং শুরু করতে নিচে ক্লিক করে আপনার খরগোশের নাম ও প্রাথমিক তথ্য যুক্ত করুন।'
+                  : 'Your account is strictly private. Add your rabbit profile to begin tracking health, weight and vaccinations.'}
+              </p>
+            </div>
+            <button
+              onClick={() => {
+                setEditingRabbit(null);
+                setIsRabbitModalOpen(true);
+              }}
+              className="px-5 py-3 rounded-2xl bg-white text-emerald-950 font-bold text-sm hover:bg-emerald-50 shadow-lg transition-all flex items-center gap-2 cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4 text-emerald-700" />
+              <span>{language === 'bn' ? 'প্রথম খরগোশ যুক্ত করুন' : 'Add First Rabbit'}</span>
+            </button>
+          </div>
+        )}
+
         {activeTab === 'overview' && (
           <HealthOverview
             rabbit={activeRabbit}
@@ -418,5 +488,13 @@ export default function App() {
         </div>
       </footer>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
