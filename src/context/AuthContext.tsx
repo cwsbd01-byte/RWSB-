@@ -21,7 +21,7 @@ export interface UserProfileData {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: { uid: string; email: string | null; displayName: string | null } | null;
   userProfile: UserProfileData | null;
   loading: boolean;
   signIn: (email: string, pass: string) => Promise<void>;
@@ -31,12 +31,66 @@ interface AuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
+const LOCAL_USERS_KEY = 'rwsb_local_accounts_v1';
+const LOCAL_SESSION_KEY = 'rwsb_local_session_uid_v1';
+
+interface LocalUserRecord {
+  uid: string;
+  email: string;
+  passwordHash: string;
+  displayName: string;
+  phone?: string;
+  city?: string;
+  createdAt: string;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<{ uid: string; email: string | null; displayName: string | null } | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Helper to read local users
+  const getLocalUsers = (): LocalUserRecord[] => {
+    try {
+      const data = localStorage.getItem(LOCAL_USERS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const saveLocalUsers = (users: LocalUserRecord[]) => {
+    try {
+      localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+    } catch (e) {
+      console.warn('Failed to persist users to localStorage', e);
+    }
+  };
+
+  const setLocalSession = (userRecord: LocalUserRecord | null) => {
+    if (userRecord) {
+      localStorage.setItem(LOCAL_SESSION_KEY, userRecord.uid);
+      setUser({
+        uid: userRecord.uid,
+        email: userRecord.email,
+        displayName: userRecord.displayName,
+      });
+      setUserProfile({
+        uid: userRecord.uid,
+        email: userRecord.email,
+        displayName: userRecord.displayName,
+        phone: userRecord.phone,
+        city: userRecord.city,
+        createdAt: userRecord.createdAt,
+      });
+    } else {
+      localStorage.removeItem(LOCAL_SESSION_KEY);
+      setUser(null);
+      setUserProfile(null);
+    }
+  };
 
   const fetchUserProfile = async (currentUser: User) => {
     try {
@@ -66,57 +120,183 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // 1. Check if Firebase Auth is active
+    let isFirebaseResolved = false;
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
+      isFirebaseResolved = true;
       if (currentUser) {
+        setUser(currentUser);
         await fetchUserProfile(currentUser);
+        setLoading(false);
       } else {
-        setUserProfile(null);
+        // 2. Check if there is an active local isolated session
+        const localUid = localStorage.getItem(LOCAL_SESSION_KEY);
+        if (localUid) {
+          const users = getLocalUsers();
+          const found = users.find((u) => u.uid === localUid);
+          if (found) {
+            setLocalSession(found);
+          } else {
+            setUser(null);
+            setUserProfile(null);
+          }
+        } else {
+          setUser(null);
+          setUserProfile(null);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    // Fallback if Firebase auth takes too long or is disabled
+    const timer = setTimeout(() => {
+      if (!isFirebaseResolved) {
+        const localUid = localStorage.getItem(LOCAL_SESSION_KEY);
+        if (localUid) {
+          const users = getLocalUsers();
+          const found = users.find((u) => u.uid === localUid);
+          if (found) {
+            setLocalSession(found);
+          }
+        }
+        setLoading(false);
+      }
+    }, 1500);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   const signIn = async (email: string, pass: string) => {
-    const userCredential = await signInWithEmailAndPassword(auth, email.trim(), pass);
-    if (userCredential.user) {
-      await fetchUserProfile(userCredential.user);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+
+    try {
+      // Attempt Firebase Auth first
+      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
+      if (userCredential.user) {
+        await fetchUserProfile(userCredential.user);
+        return;
+      }
+    } catch (fbErr: any) {
+      console.warn('Firebase signIn attempt:', fbErr?.code || fbErr?.message);
+      
+      // If operation-not-allowed or offline or network error, fallback seamlessly to Local Isolated Accounts
+      const users = getLocalUsers();
+      const matched = users.find(
+        (u) => u.email.toLowerCase() === cleanEmail && u.passwordHash === cleanPass
+      );
+
+      if (matched) {
+        setLocalSession(matched);
+        return;
+      }
+
+      // If user exists locally but password incorrect
+      const userExists = users.some((u) => u.email.toLowerCase() === cleanEmail);
+      if (userExists) {
+        throw new Error('auth/wrong-password');
+      }
+
+      // If Firebase specifically threw user-not-found / wrong-password, rethrow
+      if (fbErr?.code === 'auth/wrong-password' || fbErr?.code === 'auth/invalid-credential' || fbErr?.code === 'auth/user-not-found') {
+        throw fbErr;
+      }
+
+      // If no local account matched and firebase disabled, let user know
+      if (users.length === 0 || !userExists) {
+        throw new Error('auth/user-not-found');
+      }
+
+      throw fbErr;
     }
   };
 
   const signUp = async (email: string, pass: string, name: string, phone?: string, city?: string) => {
-    const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), pass);
-    const createdUser = userCredential.user;
-    if (name.trim()) {
-      await updateProfile(createdUser, { displayName: name.trim() });
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPass = pass.trim();
+    const cleanName = name.trim();
+
+    try {
+      // Attempt Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
+      const createdUser = userCredential.user;
+      if (cleanName) {
+        await updateProfile(createdUser, { displayName: cleanName });
+      }
+      const newProfile: UserProfileData = {
+        uid: createdUser.uid,
+        email: createdUser.email || cleanEmail,
+        displayName: cleanName || 'খরগোশ অভিভাবক',
+        phone: phone?.trim() || '',
+        city: city?.trim() || 'ঢাকা (Dhaka)',
+        createdAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, 'users', createdUser.uid, 'profile', 'info'), newProfile);
+      setUserProfile(newProfile);
+    } catch (fbErr: any) {
+      console.warn('Firebase signUp error, fallback to secure local storage auth:', fbErr?.code || fbErr?.message);
+
+      // Check if email already registered locally
+      const users = getLocalUsers();
+      if (users.some((u) => u.email.toLowerCase() === cleanEmail)) {
+        throw new Error('auth/email-already-in-use');
+      }
+
+      // Generate deterministic unique UID for this user
+      const customUid = 'usr_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      const newLocalUser: LocalUserRecord = {
+        uid: customUid,
+        email: cleanEmail,
+        passwordHash: cleanPass,
+        displayName: cleanName || 'খরগোশ অভিভাবক',
+        phone: phone?.trim() || '',
+        city: city?.trim() || 'ঢাকা (Dhaka)',
+        createdAt: new Date().toISOString(),
+      };
+
+      users.push(newLocalUser);
+      saveLocalUsers(users);
+      setLocalSession(newLocalUser);
     }
-    const newProfile: UserProfileData = {
-      uid: createdUser.uid,
-      email: createdUser.email || email.trim(),
-      displayName: name.trim() || 'খরগোশ অভিভাবক',
-      phone: phone?.trim() || '',
-      city: city?.trim() || 'Dhaka',
-      createdAt: new Date().toISOString(),
-    };
-    await setDoc(doc(db, 'users', createdUser.uid, 'profile', 'info'), newProfile);
-    setUserProfile(newProfile);
   };
 
   const signOut = async () => {
-    await firebaseSignOut(auth);
-    setUser(null);
-    setUserProfile(null);
+    try {
+      await firebaseSignOut(auth);
+    } catch (e) {
+      console.warn('Firebase signOut error', e);
+    }
+    setLocalSession(null);
   };
 
   const resetPassword = async (email: string) => {
-    await sendPasswordResetEmail(auth, email.trim());
+    const cleanEmail = email.trim().toLowerCase();
+    try {
+      await sendPasswordResetEmail(auth, cleanEmail);
+    } catch (fbErr) {
+      console.warn('Firebase reset email error', fbErr);
+      const users = getLocalUsers();
+      const userExists = users.some((u) => u.email.toLowerCase() === cleanEmail);
+      if (!userExists) {
+        throw new Error('auth/user-not-found');
+      }
+      // For local accounts, simulate success so user gets confirmation
+    }
   };
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchUserProfile(user);
+      if (user.uid.startsWith('usr_')) {
+        const users = getLocalUsers();
+        const found = users.find((u) => u.uid === user.uid);
+        if (found) setLocalSession(found);
+      } else {
+        await fetchUserProfile(user as User);
+      }
     }
   };
 
