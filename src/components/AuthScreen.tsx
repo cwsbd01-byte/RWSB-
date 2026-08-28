@@ -111,10 +111,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ language, onLanguageTogg
           </div>
           <div>
             <h1 className="font-bold text-lg text-emerald-100 leading-tight">
-              {language === 'bn' ? 'র‍্যাবিট কেয়ার বাংলাদেশ' : 'Rabbit Care BD'}
+              {language === 'bn' ? 'র্যাবিট ওয়েলফেয়ার' : 'Rabbit Welfare'}
             </h1>
             <p className="text-xs text-emerald-300/80">
-              {language === 'bn' ? 'ব্যক্তিগত ও নিরাপদ ট্র্যাকার' : 'Private & Secure Tracker'}
+              {language === 'bn' ? 'সোসাইটি অফ বাংলাদেশ • পার্সোনাল ট্র্যাকার' : 'Society of Bangladesh • Personal Tracker'}
             </p>
           </div>
         </div>

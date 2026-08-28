@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/web-manifest-combined.json",
   "name": "Rabbit Welfare Society of Bangladesh - Health Tracker",
-  "short_name": "Rabbit Care BD",
+  "short_name": "RWSB Tracker",
   "description": "Comprehensive rabbit health, weight, GI stasis monitor, vaccination records, diet guides, and AI veterinary assistant for Bangladesh rabbit owners - খরগোশের স্বাস্থ্য ও যত্ন ট্র্যাকিং অ্যাপ",
   "id": "/?source=pwa",
   "start_url": "/?source=pwa",
