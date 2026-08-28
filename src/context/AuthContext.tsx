@@ -47,9 +47,45 @@ interface LocalUserRecord {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<{ uid: string; email: string | null; displayName: string | null } | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Synchronous immediate local session detection (Zero-delay startup)
+  const [user, setUser] = useState<{ uid: string; email: string | null; displayName: string | null } | null>(() => {
+    try {
+      const localUid = localStorage.getItem(LOCAL_SESSION_KEY);
+      if (localUid) {
+        const raw = localStorage.getItem(LOCAL_USERS_KEY);
+        const users: LocalUserRecord[] = raw ? JSON.parse(raw) : [];
+        const found = users.find((u) => u.uid === localUid);
+        if (found) {
+          return { uid: found.uid, email: found.email, displayName: found.displayName };
+        }
+      }
+    } catch {}
+    return null;
+  });
+
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(() => {
+    try {
+      const localUid = localStorage.getItem(LOCAL_SESSION_KEY);
+      if (localUid) {
+        const raw = localStorage.getItem(LOCAL_USERS_KEY);
+        const users: LocalUserRecord[] = raw ? JSON.parse(raw) : [];
+        const found = users.find((u) => u.uid === localUid);
+        if (found) {
+          return {
+            uid: found.uid,
+            email: found.email,
+            displayName: found.displayName,
+            phone: found.phone,
+            city: found.city,
+            createdAt: found.createdAt,
+          };
+        }
+      }
+    } catch {}
+    return null;
+  });
+
+  const [loading, setLoading] = useState(false);
 
   // Helper to read local users
   const getLocalUsers = (): LocalUserRecord[] => {
@@ -110,7 +146,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err) {
       console.warn('Could not fetch user profile from firestore:', err);
-      setUserProfile({
+      setUserProfile((prev) => prev || {
         uid: currentUser.uid,
         email: currentUser.email || '',
         displayName: currentUser.displayName || 'খরগোশ অভিভাবক',
@@ -120,53 +156,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // 1. Check if Firebase Auth is active
-    let isFirebaseResolved = false;
-
+    // Non-blocking Firebase Auth listener
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      isFirebaseResolved = true;
       if (currentUser) {
         setUser(currentUser);
-        await fetchUserProfile(currentUser);
-        setLoading(false);
+        fetchUserProfile(currentUser);
       } else {
-        // 2. Check if there is an active local isolated session
+        // If not authenticated via Firebase, check if local user exists
         const localUid = localStorage.getItem(LOCAL_SESSION_KEY);
         if (localUid) {
           const users = getLocalUsers();
           const found = users.find((u) => u.uid === localUid);
           if (found) {
             setLocalSession(found);
-          } else {
-            setUser(null);
-            setUserProfile(null);
           }
-        } else {
-          setUser(null);
-          setUserProfile(null);
         }
-        setLoading(false);
       }
     });
 
-    // Fallback if Firebase auth takes too long or is disabled
-    const timer = setTimeout(() => {
-      if (!isFirebaseResolved) {
-        const localUid = localStorage.getItem(LOCAL_SESSION_KEY);
-        if (localUid) {
-          const users = getLocalUsers();
-          const found = users.find((u) => u.uid === localUid);
-          if (found) {
-            setLocalSession(found);
-          }
-        }
-        setLoading(false);
-      }
-    }, 1500);
-
     return () => {
       unsubscribe();
-      clearTimeout(timer);
     };
   }, []);
 

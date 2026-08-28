@@ -47,6 +47,12 @@ app.get("/offline.html", (_req, res) => {
 
 app.use(express.json({ limit: "10mb" }));
 
+// Guarantee JSON Content-Type for all /api routes
+app.use("/api", (_req, res, next) => {
+  res.setHeader("Content-Type", "application/json");
+  next();
+});
+
 // Lazy initialization of Gemini AI
 let aiClient: GoogleGenAI | null = null;
 function getGeminiClient(): GoogleGenAI {
@@ -67,12 +73,12 @@ function getGeminiClient(): GoogleGenAI {
   return aiClient;
 }
 
-// Highly available models with resilient fallback
+// Highly available modern Gemini models with resilient fallback
 const CANDIDATE_MODELS = [
-  "gemini-3.6-flash",
-  "gemini-2.5-flash",
   "gemini-3.7-flash",
-  "gemini-2.5-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
 ];
 
 async function generateWithFallback(
@@ -398,6 +404,11 @@ Respond in ${language === "bn" ? "warm, polite, easy-to-understand Bengali (à¦¬à
 
     res.json({ success: true, reply: fallbackReply });
   }
+});
+
+// Fallback for unknown /api routes to prevent HTML response
+app.use("/api/*", (_req, res) => {
+  res.status(404).json({ success: false, error: "API route not found" });
 });
 
 // Vite middleware setup

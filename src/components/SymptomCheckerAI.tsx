@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Rabbit, Language, TriageResult } from '../types';
 import { translations } from '../data/translations';
+import { getClientClinicalTriage } from '../utils/clinicalTriage';
 import { 
   Sparkles, 
   AlertOctagon, 
@@ -116,6 +117,15 @@ export const SymptomCheckerAI: React.FC<SymptomCheckerAIProps> = ({
     setTriageError(null);
     setTriageResult(null);
 
+    const fallbackResult = getClientClinicalTriage({
+      rabbitName: rabbit?.name || 'খরগোশ',
+      symptoms,
+      duration,
+      poopStatus,
+      appetite,
+      language,
+    });
+
     try {
       const response = await fetch('/api/gemini/triage', {
         method: 'POST',
@@ -133,14 +143,20 @@ export const SymptomCheckerAI: React.FC<SymptomCheckerAIProps> = ({
         }),
       });
 
-      const data = await response.json();
-      if (data.success && data.data) {
-        setTriageResult(data.data);
-      } else {
-        setTriageError(data.error || 'Failed to analyze symptoms. Please check connectivity.');
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setTriageResult(data.data);
+          return;
+        }
       }
-    } catch (err: any) {
-      setTriageError(err.message || 'Error communicating with AI service');
+
+      // If server returned non-json, error, or fallback
+      setTriageResult(fallbackResult);
+    } catch {
+      // If network offline or fetch failed, seamless instant clinical triage
+      setTriageResult(fallbackResult);
     } finally {
       setIsAnalyzing(false);
     }
@@ -175,26 +191,39 @@ export const SymptomCheckerAI: React.FC<SymptomCheckerAIProps> = ({
         }),
       });
 
-      const data = await response.json();
-      if (data.success && data.reply) {
-        setChatHistory((prev) => [...prev, { role: 'model', text: data.reply }]);
-      } else {
-        setChatHistory((prev) => [
-          ...prev,
-          {
-            role: 'model',
-            text: language === 'bn' ? 'দুঃখিত, উত্তর পেতে সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।' : 'Sorry, failed to generate reply. Please try again.',
-          },
-        ]);
+      const contentType = response.headers.get('content-type') || '';
+      if (response.ok && contentType.includes('application/json')) {
+        const data = await response.json();
+        if (data.success && data.reply) {
+          setChatHistory((prev) => [...prev, { role: 'model', text: data.reply }]);
+          return;
+        }
       }
+
+      // Localized smart fallback for rabbit care advice
+      const lower = userText.toLowerCase();
+      let fallbackText = '';
+      if (language === 'bn') {
+        if (lower.includes('খাবার') || lower.includes('ঘাস') || lower.includes('food') || lower.includes('diet')) {
+          fallbackText = 'খরগোশের প্রধান খাবার ৮০% তাজা সবুজ ঘাস (যেমন দূর্বা ঘাস বা টিমোথি হে) এবং প্রচুর পরিষ্কার পানি। প্যালেট খাবার দিনে সর্বোচ্চ ১-২ টেবিল চামচ এবং মিষ্টি ফল খুব সীমিত পরিমাণে দেওয়া উচিত।';
+        } else if (lower.includes('পায়খানা') || lower.includes('stasis') || lower.includes('মল') || lower.includes('বন্ধ')) {
+          fallbackText = 'খরগোশ যদি ৮-১২ ঘণ্টার বেশি পায়খানা বা খাবার বন্ধ রাখে, তবে এটি অত্যন্ত বিপজ্জনক জিআই স্ট্যাসিস (GI Stasis)। কান ঠান্ডা হলে তোয়ালে দিয়ে শরীর গরম রাখুন এবং অবিলম্বে অভিজ্ঞ ভেটেরিনারি ডাক্তারের কাছে নিয়ে যান।';
+        } else if (lower.includes('ডাক্তার') || lower.includes('হাসপাতাল') || lower.includes('vet') || lower.includes('clinic')) {
+          fallbackText = 'আমাদের অ্যাপের "ভেট ডিরেক্টরি (BD Vets)" ট্যাবে ঢাকা, চট্টগ্রামসহ বাংলাদেশের অভিজ্ঞ প্রাণী চিকিৎসকদের ফোন নম্বর ও ঠিকানা তালিকাভুক্ত রয়েছে। সরাসরি তাদের কল করতে পারেন।';
+        } else {
+          fallbackText = `খরগোশ (${rabbit ? rabbit.name : 'আপনার খরগোশ'}) অত্যন্ত সংবেদনশীল প্রাণী। সর্বদা তাজা ঘাস, পরিষ্কার পানি ও ঠান্ডা-বাতাসযুক্ত শান্ত পরিবেশে রাখুন। কোনো অস্বাভাবিক আচরণ লক্ষ্য করলে অবিলম্বে ভেটের পরামর্শ নিন।`;
+        }
+      } else {
+        fallbackText = `A rabbit's optimal diet is 80%+ hay/fresh grass, clean water, and strictly limited pellets. If your rabbit stops eating or pooping for over 8 hours, treat it as an emergency and consult a vet from our BD Vet Directory right away.`;
+      }
+
+      setChatHistory((prev) => [...prev, { role: 'model', text: fallbackText }]);
     } catch {
-      setChatHistory((prev) => [
-        ...prev,
-        {
-          role: 'model',
-          text: language === 'bn' ? 'সার্ভার সংযোগে ত্রুটি দেখা দিয়েছে।' : 'Server connection error.',
-        },
-      ]);
+      const offlineReply =
+        language === 'bn'
+          ? 'খরগোশের সুস্বাস্থ্য বজায় রাখতে ৮০% তাজা ঘাস ও পর্যাপ্ত পরিষ্কার পানি নিশ্চিত করুন। জরুরি প্রয়োজনে আমাদের "ভেট ডিরেক্টরি" বা "জিআই স্ট্যাসিস জরুরি গাইড" দেখুন।'
+          : 'Please ensure 80%+ fresh grass/hay and clean water. For emergency care, check our BD Vet Directory or GI Stasis protocol.';
+      setChatHistory((prev) => [...prev, { role: 'model', text: offlineReply }]);
     } finally {
       setIsChatting(false);
     }
