@@ -6,12 +6,9 @@ import {
   Lock, 
   Mail, 
   User, 
-  Phone, 
-  MapPin, 
   Eye, 
   EyeOff, 
   ShieldCheck, 
-  Sparkles, 
   AlertCircle, 
   CheckCircle2,
   ArrowRight,
@@ -31,8 +28,6 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ language, onLanguageTogg
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [city, setCity] = useState('ঢাকা (Dhaka)');
   const [showPassword, setShowPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -68,8 +63,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ language, onLanguageTogg
       return;
     }
 
-    if (!password || password.length < 6) {
-      setErrorMsg(language === 'bn' ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে।' : 'Password must be at least 6 characters.');
+    if (!password || password.length < 4) {
+      setErrorMsg(language === 'bn' ? 'পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে।' : 'Password must be at least 4 characters.');
       return;
     }
 
@@ -81,7 +76,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ language, onLanguageTogg
           setLoading(false);
           return;
         }
-        await signUp(email.trim(), password, name.trim(), phone.trim(), city);
+        await signUp(email.trim(), password, name.trim());
         setSuccessMsg(language === 'bn' ? 'একাউন্ট সফলভাবে তৈরি হয়েছে!' : 'Account created successfully!');
       } else {
         await signIn(email.trim(), password);
@@ -182,65 +177,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ language, onLanguageTogg
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {isSignUp && (
-            <>
-              <div>
-                <label className="block text-xs font-semibold text-emerald-200 mb-1.5">
-                  {language === 'bn' ? 'আপনার পূর্ণ নাম' : 'Full Name'} *
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder={language === 'bn' ? 'যেমন: জাহিদুল ইসলাম রাজু' : 'e.g. John Doe'}
-                    className="w-full bg-slate-800/80 border border-emerald-500/20 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all"
-                  />
-                </div>
+            <div>
+              <label className="block text-xs font-semibold text-emerald-200 mb-1.5">
+                {language === 'bn' ? 'আপনার নাম' : 'Full Name'} *
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 text-emerald-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={language === 'bn' ? 'যেমন: জাহিদুল ইসলাম' : 'e.g. John Doe'}
+                  className="w-full bg-slate-800/80 border border-emerald-500/20 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-all"
+                />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-emerald-200 mb-1.5">
-                    {language === 'bn' ? 'জেলা / শহর' : 'City / District'}
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <select
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      className="w-full bg-slate-800/80 border border-emerald-500/20 rounded-xl py-2.5 pl-9 pr-2 text-xs text-white focus:outline-none focus:border-emerald-400"
-                    >
-                      <option value="ঢাকা (Dhaka)">ঢাকা (Dhaka)</option>
-                      <option value="চট্টগ্রাম (Chattogram)">চট্টগ্রাম (Chattogram)</option>
-                      <option value="সিলেট (Sylhet)">সিলেট (Sylhet)</option>
-                      <option value="রাজশাহী (Rajshahi)">রাজশাহী (Rajshahi)</option>
-                      <option value="খুলনা (Khulna)">খুলনা (Khulna)</option>
-                      <option value="বরিশাল (Barishal)">বরিশাল (Barishal)</option>
-                      <option value="রংপুর (Rangpur)">রংপুর (Rangpur)</option>
-                      <option value="ময়মনসিংহ (Mymensingh)">ময়মনসিংহ (Mymensingh)</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-emerald-200 mb-1.5">
-                    {language === 'bn' ? 'মোবাইল নম্বর' : 'Phone'}
-                  </label>
-                  <div className="relative">
-                    <Phone className="w-4 h-4 text-emerald-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="01XXXXXXXXX"
-                      className="w-full bg-slate-800/80 border border-emerald-500/20 rounded-xl py-2.5 pl-9 pr-3 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-emerald-400"
-                    />
-                  </div>
-                </div>
-              </div>
-            </>
+            </div>
           )}
 
           <div>
