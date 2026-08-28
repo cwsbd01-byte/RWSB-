@@ -257,7 +257,7 @@ export const VetReportModal: React.FC<VetReportModalProps> = ({
               </div>
               <div className="text-right text-xs text-slate-500">
                 <div>Date: {new Date().toLocaleDateString()}</div>
-                <div>Helpline: +880 1987-580017</div>
+                <div>WhatsApp: RWSB Community</div>
               </div>
             </div>
 

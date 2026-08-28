@@ -23,7 +23,7 @@ const INITIAL_RABBITS: Rabbit[] = [
     microchipNo: 'BD-RWS-8842',
     notes: 'উদ্ধারকৃত খরগোশ। প্রচুর দুর্বা ঘাস এবং ধনেপাতা পছন্দ করে। পেটের গ্যাস হওয়ার প্রবণতা রয়েছে।',
     ownerName: 'জাহিদুল ইসলাম রাজু',
-    ownerPhone: '01987-580017',
+    ownerPhone: '',
     ownerCity: 'ঢাকা (Dhaka)',
     createdAt: '2026-01-10T10:00:00.000Z',
     updatedAt: '2026-08-25T14:30:00.000Z',

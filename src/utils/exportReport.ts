@@ -54,7 +54,7 @@ export const generateVetTextSummary = (
   lines.push('                খরগোশ স্বাস্থ্য ও ভেটেরিনারি কেস সামারি                            ');
   lines.push('================================================================================');
   lines.push(`Exported On: ${dateStr} at ${timeStr}`);
-  lines.push(`Helpline: +880 1987-580017 (01987580017) | Portal: Rabbit Health Tracker BD`);
+  lines.push(`Community: WhatsApp Group (RWSB) | Portal: Rabbit Health Tracker BD`);
   lines.push('--------------------------------------------------------------------------------');
 
   // Patient Identity
@@ -246,7 +246,7 @@ export const downloadVetJsonFile = (
       exportedAt: new Date().toISOString(),
       exportVersion: '1.2.0',
       source: 'Rabbit Welfare Society of Bangladesh (RWSB)',
-      helpline: '+880 1987-580017',
+      whatsappCommunity: 'https://chat.whatsapp.com/KgEHuJDfCsE8DHB8rnyRNR?s=cl&p=a&mlu=4',
       filterDaysRange: options.daysRange || 'ALL',
     },
     rabbit,

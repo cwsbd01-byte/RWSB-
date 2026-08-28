@@ -43,8 +43,9 @@ import { VetDirectoryBD } from './components/VetDirectoryBD';
 import { DailyLogModal } from './components/DailyLogModal';
 import { RabbitSelectorModal } from './components/RabbitSelectorModal';
 import { VetReportModal } from './components/VetReportModal';
+import { WhatsAppFloatingButton, WHATSAPP_COMMUNITY_LINK } from './components/WhatsAppFloatingButton';
 import { RABBIT_WELFARE_SOCIETY_INFO } from './data/bangladeshVetsAndDiet';
-import { Heart, PhoneCall, ShieldAlert, Sparkles, Lock, Plus } from 'lucide-react';
+import { Heart, MessageSquare, ShieldAlert, Sparkles, Lock, Plus } from 'lucide-react';
 
 function AppContent() {
   const { user, userProfile, loading } = useAuth();
@@ -455,11 +456,13 @@ function AppContent() {
 
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <a
-                href={`tel:${RABBIT_WELFARE_SOCIETY_INFO.helpline}`}
-                className="flex items-center space-x-1.5 text-emerald-400 hover:text-emerald-300 font-semibold"
+                href={WHATSAPP_COMMUNITY_LINK}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center space-x-1.5 text-emerald-400 hover:text-emerald-300 font-semibold bg-emerald-950/80 px-3 py-1.5 rounded-xl border border-emerald-800"
               >
-                <PhoneCall className="w-3.5 h-3.5" />
-                <span>Helpline: {RABBIT_WELFARE_SOCIETY_INFO.helpline}</span>
+                <span>💬</span>
+                <span>{language === 'bn' ? 'হোয়াটসঅ্যাপ গ্রুপে যুক্ত হোন' : 'Join WhatsApp Group'}</span>
               </a>
               <a
                 href={RABBIT_WELFARE_SOCIETY_INFO.facebookGroup}
@@ -487,6 +490,9 @@ function AppContent() {
           </div>
         </div>
       </footer>
+
+      {/* Floating WhatsApp Community Group Button */}
+      <WhatsAppFloatingButton language={language} />
     </div>
   );
 }

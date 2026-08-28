@@ -20,7 +20,8 @@ export const translations = {
     editRabbit: 'প্রোফাইল সম্পাদনা',
     exportReport: 'ভেট রিপোর্ট তৈরি ও প্রিন্ট',
     langToggle: 'English',
-    emergencyHelpline: 'জরুরি হেল্পলাইন: ০১৯৮৭-৫৮০০১৭',
+    emergencyHelpline: 'হোয়াটসঅ্যাপ গ্রুপে যুক্ত হোন',
+    whatsappCommunity: 'হোয়াটসঅ্যাপ গ্রুপ',
     
     // Health Score & Status
     healthScore: 'স্বাস্থ্য স্কোর',
@@ -196,7 +197,8 @@ export const translations = {
     editRabbit: 'Edit Profile',
     exportReport: 'Export & Print Vet Report',
     langToggle: 'বাংলা',
-    emergencyHelpline: 'Emergency Helpline: +880 1987-580017',
+    emergencyHelpline: 'Join WhatsApp Group',
+    whatsappCommunity: 'WhatsApp Group',
     
     // Health Score & Status
     healthScore: 'Health Score',

@@ -126,10 +126,12 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
         <div className="flex items-center space-x-3">
           <a 
-            href="tel:+8801987580017" 
-            className="hidden sm:flex items-center space-x-1.5 text-emerald-200 hover:text-white font-semibold transition-colors"
+            href="https://chat.whatsapp.com/KgEHuJDfCsE8DHB8rnyRNR?s=cl&p=a&mlu=4"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center space-x-1.5 text-emerald-200 hover:text-white font-semibold transition-colors bg-emerald-800/80 px-2.5 py-0.5 rounded-lg border border-emerald-700/60"
           >
-            <PhoneCall className="w-3.5 h-3.5 text-amber-400" />
+            <span className="text-emerald-400">💬</span>
             <span>{t.emergencyHelpline}</span>
           </a>
           <button

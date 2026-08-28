@@ -57,14 +57,16 @@ export const VetDirectoryBD: React.FC<VetDirectoryBDProps> = ({ language }) => {
 
         <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10 text-xs shrink-0">
           <div className="text-amber-300 font-bold uppercase tracking-wider text-[10px]">
-            {language === 'bn' ? 'সোসাইটি জরুরি হটলাইন' : 'RWSB Hotline'}
+            {language === 'bn' ? 'সোসাইটি হোয়াটসঅ্যাপ কমিউনিটি' : 'RWSB WhatsApp Community'}
           </div>
           <a
-            href={`tel:${RABBIT_WELFARE_SOCIETY_INFO.helpline}`}
-            className="text-base font-extrabold text-white hover:text-emerald-300 transition-colors flex items-center gap-1.5 mt-1"
+            href="https://chat.whatsapp.com/KgEHuJDfCsE8DHB8rnyRNR?s=cl&p=a&mlu=4"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-extrabold text-white hover:text-emerald-300 transition-colors flex items-center gap-1.5 mt-1 bg-emerald-700/80 px-3 py-1.5 rounded-xl border border-emerald-500/40"
           >
-            <PhoneCall className="w-4 h-4 text-emerald-400" />
-            <span>{RABBIT_WELFARE_SOCIETY_INFO.helpline}</span>
+            <span>💬</span>
+            <span>{language === 'bn' ? 'গ্রুপে যুক্ত হোন ও আলোচনা করুন' : 'Join Discussion Group'}</span>
           </a>
         </div>
       </div>

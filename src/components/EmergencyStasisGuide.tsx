@@ -58,11 +58,13 @@ export const EmergencyStasisGuide: React.FC<EmergencyStasisGuideProps> = ({
 
           <div className="flex flex-col gap-2 shrink-0">
             <a
-              href={`tel:${RABBIT_WELFARE_SOCIETY_INFO.helpline}`}
-              className="inline-flex items-center justify-center space-x-2 px-5 py-3 bg-white hover:bg-rose-50 text-rose-900 text-xs font-extrabold rounded-2xl shadow-lg transition-all cursor-pointer"
+              href="https://chat.whatsapp.com/KgEHuJDfCsE8DHB8rnyRNR?s=cl&p=a&mlu=4"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center space-x-2 px-5 py-3 bg-white hover:bg-emerald-50 text-emerald-900 text-xs font-extrabold rounded-2xl shadow-lg transition-all cursor-pointer"
             >
-              <PhoneCall className="w-4 h-4 text-rose-600" />
-              <span>{language === 'bn' ? 'জরুরি হেল্পলাইনে কল করুন' : 'Call RWSB Helpline'}</span>
+              <span className="text-base">💬</span>
+              <span>{language === 'bn' ? 'হোয়াটসঅ্যাপ গ্রুপে পরামর্শ নিন' : 'Ask in WhatsApp Group'}</span>
             </a>
             <button
               onClick={() => onSelectTab('vetsBD')}
